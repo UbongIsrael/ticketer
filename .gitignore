@@ -1,0 +1,36 @@
+# Dependency Directories
+node_modules/
+
+# Root Level Artifacts & Design
+build-artifacts/
+design_artifacts/
+stitch_assets/
+BUILD_MANIFEST.md
+
+# Environment Files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API - NestJS Specific
+ticketer-api/dist/
+ticketer-api/node_modules/
+ticketer-api/.env
+
+# Web - Next.js Specific
+ticketer-web/.next/
+ticketer-web/out/
+ticketer-web/node_modules/
+ticketer-web/.env.local
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs and Tools
+.vscode/
+.idea/
+.gemini/
