@@ -6,12 +6,22 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Support multiple frontend URLs via comma-separated FRONTEND_URL env var
+  const extraOrigins = (process.env.FRONTEND_URL ?? '')
+    .split(',')
+    .map((u) => u.trim())
+    .filter(Boolean);
+
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    ...extraOrigins,
+  ];
+
+  console.log('[CORS] Allowed origins:', allowedOrigins);
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      process.env.FRONTEND_URL,
-    ].filter(Boolean), // Filter out undefined if FRONTEND_URL isn't set locally
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-paystack-signature'],
     credentials: true,
