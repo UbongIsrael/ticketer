@@ -10,8 +10,8 @@ export class Payment {
   @Column('uuid')
   user_id: string;
 
-  @Column('uuid')
-  ticket_id: string;
+  @Column('simple-array')
+  ticket_ids: string[];
 
   @Column('int')
   ticket_price_minor: number;

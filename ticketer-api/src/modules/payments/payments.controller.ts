@@ -11,8 +11,8 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   async initializePayment(
     @CurrentUser() user: any,
-    @Body('ticketId') ticketId: string,
+    @Body('ticket_ids') ticketIds: string[],
   ) {
-    return this.paymentsService.initializePayment(user.id, ticketId);
+    return this.paymentsService.initializePayment(user.id, ticketIds);
   }
 }

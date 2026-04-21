@@ -15,29 +15,35 @@ export class TicketsService {
     @InjectQueue('ticket-expiry') private ticketExpiryQueue: Queue,
   ) {}
 
-  async reserve(userId: string, eventId: string, tierId: string) {
-    await this.inventoryService.reserveTicket(eventId, tierId);
+  async reserve(userId: string, eventId: string, tierId: string, quantity: number = 1) {
+    if (quantity < 1) throw new BadRequestException('Invalid ticket quantity');
+    
+    await this.inventoryService.reserveTicket(eventId, tierId, quantity);
 
-    const ticket = this.ticketRepo.create({
+    const ticketsData = Array.from({ length: quantity }).map(() => ({
       owner_id: userId,
       event_id: eventId,
       tier_id: tierId,
       status: 'RESERVED',
       reserved_at: new Date(),
       expires_at: new Date(Date.now() + 10 * 60000),
-    });
-    await this.ticketRepo.save(ticket);
+    }));
 
-    await this.ticketExpiryQueue.add('expire-ticket', {
+    const tickets = this.ticketRepo.create(ticketsData);
+    await this.ticketRepo.save(tickets);
+
+    const queuePromises = tickets.map(ticket => this.ticketExpiryQueue.add('expire-ticket', {
       ticketId: ticket.id,
       eventId: eventId,
       tierId: tierId,
     }, {
       delay: 10 * 60000,
       jobId: `expire-${ticket.id}`
-    });
+    }));
 
-    return ticket;
+    await Promise.all(queuePromises);
+
+    return { tickets };
   }
 
   async transition(ticketId: string, newState: string, extraData: any = {}) {
@@ -133,5 +139,14 @@ export class TicketsService {
       order: { created_at: 'DESC' },
       relations: ['event', 'tier']
     });
+  }
+
+  async getTicketById(ticketId: string, userId: string) {
+    const ticket = await this.ticketRepo.findOne({
+      where: { id: ticketId, owner_id: userId },
+      relations: ['event', 'tier'],
+    });
+    if (!ticket) throw new NotFoundException('Ticket not found');
+    return ticket;
   }
 }

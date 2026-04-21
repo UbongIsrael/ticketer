@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import * as crypto from 'crypto';
 import { Payment } from './entities/payment.entity';
 import { PaymentEvent } from './entities/payment-event.entity';
@@ -24,23 +24,37 @@ export class PaymentsService {
     private configService: ConfigService,
   ) {}
 
-  async initializePayment(userId: string, ticketId: string) {
-    const ticket = await this.ticketRepo.findOne({ where: { id: ticketId }});
-    if (!ticket) throw new NotFoundException('Ticket not found');
-    if (ticket.status.toUpperCase() !== 'RESERVED') throw new BadRequestException('Ticket is not reserved');
+  async initializePayment(userId: string, ticketIds: string[]) {
+    if (!ticketIds || ticketIds.length === 0) {
+      throw new BadRequestException('No ticket IDs provided');
+    }
+
+    const tickets = await this.ticketRepo.find({ where: { id: In(ticketIds) }});
+    if (tickets.length !== ticketIds.length) throw new NotFoundException('Some tickets were not found');
     
-    const tier = await this.tierRepo.findOne({ where: { id: ticket.tier_id }});
-    if (!tier) throw new NotFoundException('Tier not found');
-    
-    const ticketPrice = tier.price_minor; 
-    const fee = await this.pricingService.calculateBuyerServiceFee(ticketPrice); 
-    const totalAmount = ticketPrice + fee;
+    let totalTicketPrice = 0;
+    let totalFee = 0;
+
+    for (const ticket of tickets) {
+      if (ticket.status.toUpperCase() !== 'RESERVED') throw new BadRequestException('Ticket is not reserved');
+      
+      const tier = await this.tierRepo.findOne({ where: { id: ticket.tier_id }});
+      if (!tier) throw new NotFoundException('Tier not found');
+      
+      const ticketPrice = tier.price_minor; 
+      const fee = await this.pricingService.calculateBuyerServiceFee(ticketPrice); 
+      
+      totalTicketPrice += ticketPrice;
+      totalFee += fee;
+    }
+
+    const totalAmount = totalTicketPrice + totalFee;
 
     const payment = this.paymentRepo.create({
       user_id: userId,
-      ticket_id: ticketId,
-      ticket_price_minor: ticketPrice,
-      buyer_service_fee_minor: fee,
+      ticket_ids: ticketIds,
+      ticket_price_minor: totalTicketPrice,
+      buyer_service_fee_minor: totalFee,
       total_charged_minor: totalAmount,
       provider: 'paystack',
       payment_channel: 'card',
@@ -49,7 +63,7 @@ export class PaymentsService {
     });
     await this.paymentRepo.save(payment);
 
-    await this.ticketsService.transition(ticketId, 'PAYMENT_PENDING');
+    await Promise.all(ticketIds.map(id => this.ticketsService.transition(id, 'PAYMENT_PENDING')));
 
     return {
       message: 'Payment initialized',
@@ -89,18 +103,22 @@ export class PaymentsService {
     payment.completed_at = new Date();
     await this.paymentRepo.save(payment);
 
-    const ticket = await this.ticketRepo.findOne({ where: { id: payment.ticket_id }});
-    if (!ticket) throw new NotFoundException('Ticket context missing');
+    const tickets = await this.ticketRepo.find({ where: { id: In(payment.ticket_ids) }});
+    if (!tickets || tickets.length === 0) throw new NotFoundException('Ticket context missing');
 
-    await this.ticketsService.transition(payment.ticket_id, 'PAID', { payment_id: payment.id });
-    
-    const ticketCode = generateTicketCode();
-    const qrPayload = generateQrPayload(payment.ticket_id, ticket.event_id, this.configService.get<string>('app.qrSecret') || 'default-qr-key');
-    
-    await this.ticketsService.transition(payment.ticket_id, 'ISSUED', {
-      ticket_code: ticketCode,
-      qr_payload: qrPayload,
-    });
+    const qrSecret = this.configService.get<string>('app.qrSecret') || 'default-qr-key';
+
+    for (const ticket of tickets) {
+      await this.ticketsService.transition(ticket.id, 'PAID', { payment_id: payment.id });
+      
+      const ticketCode = generateTicketCode();
+      const qrPayload = generateQrPayload(ticket.id, ticket.event_id, qrSecret);
+      
+      await this.ticketsService.transition(ticket.id, 'ISSUED', {
+        ticket_code: ticketCode,
+        qr_payload: qrPayload,
+      });
+    }
 
     return { status: 'processed' };
   }

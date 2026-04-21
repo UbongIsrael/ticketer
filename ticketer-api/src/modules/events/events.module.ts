@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
+import { WeatherService } from './weather.service';
 import { Event } from './entities/event.entity';
 import { TicketTier } from './entities/ticket-tier.entity';
 import { TicketsModule } from '../tickets/tickets.module';
@@ -22,7 +23,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [EventsController],
-  providers: [EventsService],
-  exports: [EventsService],
+  providers: [EventsService, WeatherService],
+  exports: [EventsService, WeatherService],
 })
 export class EventsModule {}
+

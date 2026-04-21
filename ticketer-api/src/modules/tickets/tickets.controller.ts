@@ -11,9 +11,10 @@ export class TicketsController {
   @UseGuards(JwtAuthGuard)
   async reserveTicket(
     @CurrentUser() user: any,
-    @Body() body: { eventId: string; tierId: string }
+    @Body() body: { event_id: string; tier_id: string; quantity?: number }
   ) {
-    return this.ticketsService.reserve(user.id, body.eventId, body.tierId);
+    const qty = body.quantity || 1;
+    return this.ticketsService.reserve(user.id, body.event_id, body.tier_id, qty);
   }
 
   @Delete('reserve/:ticketId')
@@ -29,5 +30,14 @@ export class TicketsController {
   @UseGuards(JwtAuthGuard)
   async getMyTickets(@CurrentUser() user: any) {
     return this.ticketsService.getMyTickets(user.id);
+  }
+
+  @Get('me/:ticketId')
+  @UseGuards(JwtAuthGuard)
+  async getTicketById(
+    @CurrentUser() user: any,
+    @Param('ticketId') ticketId: string,
+  ) {
+    return this.ticketsService.getTicketById(ticketId, user.id);
   }
 }

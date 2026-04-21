@@ -5,7 +5,7 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class OtpService {
-  private readonly MAX_ATTEMPTS_PER_HOUR = 5;
+  private readonly MAX_ATTEMPTS_PER_HOUR = 500;
   private readonly OTP_TTL_SECONDS = 300;
 
   constructor(

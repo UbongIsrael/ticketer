@@ -1,8 +1,6 @@
 import { api } from '../axios';
 
-export interface InitializePaymentRequest {
-  ticket_id: string;
-}
+
 
 export interface InitializePaymentResponse {
   authorization_url: string;
@@ -10,8 +8,8 @@ export interface InitializePaymentResponse {
   reference: string;
 }
 
-// Initialize payment with Paystack
-export const initializePayment = async (data: InitializePaymentRequest): Promise<InitializePaymentResponse> => {
+// Initialize payment for reserved tickets
+export const initializePayment = async (data: { ticket_ids: string[] }): Promise<InitializePaymentResponse> => {
   const response = await api.post('/payments/initialize', data);
   return response.data;
 };

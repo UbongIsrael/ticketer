@@ -19,15 +19,9 @@ function CheckoutInner() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [reservedTicket, setReservedTicket] = useState<any>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-      return;
-    }
-
     if (!tierId) {
       router.push('/');
       return;
@@ -45,24 +39,7 @@ function CheckoutInner() {
     }
   }, [tierId, isAuthenticated]);
 
-  useEffect(() => {
-    if (reservedTicket && reservedTicket.reserved_until) {
-      const interval = setInterval(() => {
-        const now = new Date().getTime();
-        const expiryTime = new Date(reservedTicket.reserved_until).getTime();
-        const remaining = Math.max(0, Math.floor((expiryTime - now) / 1000));
-        
-        setTimeRemaining(remaining);
-        
-        if (remaining === 0) {
-          clearInterval(interval);
-          setError(new Error('Reservation expired. Please try again.'));
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [reservedTicket]);
+  // Removed auto-timer reservation logic
 
   const fetchEventAndTier = async (slug: string, tierId: string) => {
     try {
@@ -76,38 +53,28 @@ function CheckoutInner() {
 
       setEvent(eventData);
       setTier(tierData);
-      
-      // Auto-reserve the ticket
-      await handleReserveTicket(tierId);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load checkout'));
+      setError(err instanceof Error ? err : new Error('Event or Ticket missing'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReserveTicket = async (tierId: string) => {
-    try {
-      const response = await reserveTicket({ tier_id: tierId });
-      setReservedTicket(response.ticket);
-    } catch (err) {
-      throw err;
-    }
-  };
-
   const handleProceedToPayment = async () => {
-    if (!reservedTicket) return;
+    if (!tier || !event) return;
 
     setProcessing(true);
     setError(null);
 
     try {
-      const paymentResponse = await initializePayment({ ticket_id: reservedTicket.id });
+      const reservation = await reserveTicket({ tier_id: tier.id, event_id: event.id, quantity });
+      
+      const paymentResponse = await initializePayment({ ticket_ids: reservation.tickets.map((t: any) => t.id) });
       
       // Redirect to Paystack
       window.location.href = paymentResponse.authorization_url;
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to initialize payment'));
+      setError(err instanceof Error ? err : new Error('Failed to process order'));
       setProcessing(false);
     }
   };
@@ -116,17 +83,14 @@ function CheckoutInner() {
     return `₦${(priceMinor / 100).toLocaleString()}`;
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   if (loading) return <LoadingPage />;
   if (error && !tier) return <ErrorMessage error={error} />;
 
-  const serviceFee = tier ? Math.floor(tier.price_minor * 0.05) : 0; // 5% service fee
-  const totalAmount = tier ? tier.price_minor + serviceFee : 0;
+  const serviceFee = tier ? Math.floor(tier.price_minor * 0.05) : 0;
+  const totalAmount = tier ? (tier.price_minor + serviceFee) * quantity : 0;
+  const maxQty = event?.max_tickets_per_user || 3;
 
   return (
     <div className="min-h-screen py-16 px-6">
@@ -143,15 +107,7 @@ function CheckoutInner() {
           </div>
         )}
 
-        {timeRemaining !== null && timeRemaining > 0 && (
-          <div className="mb-6 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-center gap-3">
-            <span className="material-symbols-outlined text-amber-400">schedule</span>
-            <div>
-              <p className="text-amber-400 font-bold">Reservation expires in {formatTime(timeRemaining)}</p>
-              <p className="text-on-surface-variant text-sm">Complete payment before your reservation expires</p>
-            </div>
-          </div>
-        )}
+
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Order Summary */}
@@ -205,7 +161,17 @@ function CheckoutInner() {
                   )}
                   <div className="flex justify-between items-center">
                     <span className="text-on-surface-variant">Quantity</span>
-                    <span className="font-bold">1</span>
+                    <div className="flex items-center gap-4 bg-surface-container-high rounded-full px-2 py-1">
+                      <button 
+                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                         disabled={quantity <= 1 || processing}
+                         className="material-symbols-outlined text-sm p-1 rounded-full hover:bg-surface-container-highest disabled:opacity-50">remove</button>
+                      <span className="font-bold min-w-[20px] text-center">{quantity}</span>
+                      <button 
+                         onClick={() => setQuantity(q => Math.min(maxQty, q + 1))}
+                         disabled={quantity >= maxQty || processing}
+                         className="material-symbols-outlined text-sm p-1 rounded-full hover:bg-surface-container-highest disabled:opacity-50">add</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -262,7 +228,7 @@ function CheckoutInner() {
 
               <button
                 onClick={handleProceedToPayment}
-                disabled={processing || !reservedTicket || (timeRemaining !== null && timeRemaining === 0)}
+                disabled={processing || !tier || !event}
                 className="w-full bg-primary hover:bg-primary-dim text-[#0e0e10] py-4 rounded-lg font-black text-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {processing ? (
@@ -300,10 +266,14 @@ function CheckoutInner() {
   );
 }
 
+import { AuthGuard } from '@/components/AuthGuard';
+
 export default function Checkout() {
   return (
     <Suspense fallback={<LoadingPage />}>
-      <CheckoutInner />
+      <AuthGuard>
+        <CheckoutInner />
+      </AuthGuard>
     </Suspense>
   );
 }

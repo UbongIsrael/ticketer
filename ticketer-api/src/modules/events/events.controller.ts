@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Patch, Body, Param, UseGuards, Query, UseInterceptors } from '@nestjs/common';
 import { EventsService } from './events.service';
+import { WeatherService } from './weather.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { RequiresCapability } from '../../common/decorators/requires-capability.decorator';
@@ -8,7 +9,10 @@ import { EventGuardrailsInterceptor } from './interceptors/event-guardrails.inte
 
 @Controller('events')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly weatherService: WeatherService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +36,12 @@ export class EventsController {
     @Query('page') page: string,
     @Query('limit') limit: string,
   ) {
-    return this.eventsService.search(query, city, eventType, parseInt(page) || 1, parseInt(limit) || 20);
+    try {
+      return await this.eventsService.search(query, city, eventType, parseInt(page) || 1, parseInt(limit) || 20);
+    } catch (error: any) {
+      console.error(error);
+      return { _is_error: true, message: error.message, stack: error.stack };
+    }
   }
 
   @Get(':id')
@@ -85,5 +94,18 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   async getAttendedEvents(@CurrentUser() user: any) {
     return this.eventsService.getAttendedEvents(user.id);
+  }
+
+  @Get(':slug/weather')
+  async getEventWeather(@Param('slug') slug: string) {
+    const event = await this.eventsService.findOneBySlug(slug);
+    if (!event.latitude || !event.longitude) {
+      return null;
+    }
+    return this.weatherService.getEventWeather(
+      event.latitude,
+      event.longitude,
+      new Date(event.starts_at),
+    );
   }
 }

@@ -45,7 +45,10 @@ export class RefundsService {
       throw new BadRequestException(`Buy-back closed. Event is less than ${windowHours}h away.`);
     }
 
-    const payment = await this.paymentRepo.findOne({ where: { ticket_id: ticketId, status: 'completed' }});
+    const payment = await this.paymentRepo.createQueryBuilder('payment')
+      .where('payment.ticket_ids LIKE :id', { id: `%${ticketId}%` })
+      .andWhere('payment.status = :status', { status: 'completed' })
+      .getOne();
     if (!payment) throw new BadRequestException('Original payment reference missing');
 
     const originalMinor = payment.ticket_price_minor;
@@ -122,7 +125,10 @@ export class RefundsService {
     const tickets = await this.ticketRepo.find({ where: { event_id: eventId }});
     for (const t of tickets) {
       if (t.status.toUpperCase() === 'ISSUED' || t.status.toUpperCase() === 'PAID') {
-         const payment = await this.paymentRepo.findOne({ where: { ticket_id: t.id, status: 'completed' }});
+         const payment = await this.paymentRepo.createQueryBuilder('payment')
+           .where('payment.ticket_ids LIKE :id', { id: `%${t.id}%` })
+           .andWhere('payment.status = :status', { status: 'completed' })
+           .getOne();
          if (payment) {
            const refund = this.refundRepo.create({
               ticket_id: t.id,

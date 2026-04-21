@@ -43,29 +43,26 @@ export function TopNavBar() {
             Ticketer
           </Link>
           <div className="hidden md:flex items-center gap-6">
-            <Link 
-              className={`transition-colors hover:bg-white/5 px-3 py-1 rounded-lg ${
-                isActivePath('/') && !isActivePath('/search') && !isActivePath('/dashboard')
-                  ? 'text-[#ba9eff] font-bold' 
+            <Link
+              className={`transition-colors hover:bg-white/5 px-3 py-1 rounded-lg ${isActivePath('/') && !isActivePath('/search') && !isActivePath('/dashboard')
+                  ? 'text-[#ba9eff] font-bold'
                   : 'text-zinc-400'
-              }`} 
+                }`}
               href="/"
             >
               Home
             </Link>
-            <Link 
-              className={`transition-colors hover:bg-white/5 px-3 py-1 rounded-lg ${
-                isActivePath('/search') ? 'text-[#ba9eff] font-bold' : 'text-zinc-400'
-              }`} 
+            <Link
+              className={`transition-colors hover:bg-white/5 px-3 py-1 rounded-lg ${isActivePath('/search') ? 'text-[#ba9eff] font-bold' : 'text-zinc-400'
+                }`}
               href="/search"
             >
               Search
             </Link>
             {isAuthenticated && (
-              <Link 
-                className={`transition-colors hover:bg-white/5 px-3 py-1 rounded-lg ${
-                  isActivePath('/dashboard/tickets') ? 'text-[#ba9eff] font-bold' : 'text-zinc-400'
-                }`} 
+              <Link
+                className={`transition-colors hover:bg-white/5 px-3 py-1 rounded-lg ${isActivePath('/dashboard/tickets') ? 'text-[#ba9eff] font-bold' : 'text-zinc-400'
+                  }`}
                 href="/dashboard/tickets"
               >
                 My Tickets
@@ -73,25 +70,25 @@ export function TopNavBar() {
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex bg-surface-container-highest rounded-full px-4 py-1.5 items-center gap-2">
             <span className="material-symbols-outlined text-on-surface-variant text-sm">search</span>
-            <input 
-              className="bg-transparent border-none focus:ring-0 text-sm w-48 text-on-surface outline-none" 
-              placeholder="Search events..." 
+            <input
+              className="bg-transparent border-none focus:ring-0 text-sm w-48 text-on-surface outline-none"
+              placeholder="Search events..."
               type="text"
               onFocus={() => router.push('/search')}
             />
           </div>
-          
+
           <div className="flex items-center gap-3">
             {isAuthenticated && (
               <button className="material-symbols-outlined text-zinc-400 hover:bg-white/5 p-2 rounded-full transition-all">
                 notifications
               </button>
             )}
-            
+
             {/* User Menu */}
             {isAuthenticated ? (
               <div className="relative" ref={menuRef}>
@@ -120,18 +117,16 @@ export function TopNavBar() {
                         <span className="material-symbols-outlined text-sm">confirmation_number</span>
                         <span className="text-sm">My Tickets</span>
                       </Link>
-                      
-                      {user?.capabilities?.includes('HOST') && (
-                        <Link
-                          href="/dashboard/host"
-                          className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container-high transition-colors"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <span className="material-symbols-outlined text-sm">theater_comedy</span>
-                          <span className="text-sm">Host Dashboard</span>
-                        </Link>
-                      )}
-                      
+
+                      <Link
+                        href="/dashboard/host-portal"
+                        className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container-high transition-colors"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <span className="material-symbols-outlined text-sm">theater_comedy</span>
+                        <span className="text-sm">Host Portal</span>
+                      </Link>
+
                       <Link
                         href="/dashboard/settings"
                         className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container-high transition-colors"
@@ -156,8 +151,8 @@ export function TopNavBar() {
                 )}
               </div>
             ) : (
-              <Link 
-                href="/login" 
+              <Link
+                href="/login"
                 className="material-symbols-outlined text-zinc-400 hover:bg-white/5 p-2 rounded-full transition-all"
               >
                 person
@@ -182,30 +177,28 @@ export function BottomNavBar() {
   return (
     <nav className="md:hidden fixed bottom-0 w-full h-20 rounded-t-2xl z-50 bg-[#1f1f22]/90 backdrop-blur-md text-[10px] uppercase tracking-widest border-t border-white/5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
       <div className="flex justify-between items-center px-8 h-full w-full">
-        <Link 
-          className={`flex flex-col items-center gap-1 transition-all ${
-            isActivePath('/') && !isActivePath('/search') && !isActivePath('/dashboard')
-              ? 'text-[#ba9eff] scale-110' 
+        <Link
+          className={`flex flex-col items-center gap-1 transition-all ${isActivePath('/') && !isActivePath('/search') && !isActivePath('/dashboard')
+              ? 'text-[#ba9eff] scale-110'
               : 'text-zinc-400 hover:text-white active:opacity-90'
-          }`} 
+            }`}
           href="/"
         >
-          <span 
-            className="material-symbols-outlined text-2xl" 
+          <span
+            className="material-symbols-outlined text-2xl"
             style={isActivePath('/') && !isActivePath('/search') && !isActivePath('/dashboard') ? { fontVariationSettings: "'FILL' 1" } : {}}
           >
             home
           </span>
           <span>Home</span>
         </Link>
-        
-        <Link 
-          className={`flex flex-col items-center gap-1 transition-all ${
-            isActivePath('/search') ? 'text-[#ba9eff] scale-110' : 'text-zinc-400 hover:text-white active:opacity-90'
-          }`} 
+
+        <Link
+          className={`flex flex-col items-center gap-1 transition-all ${isActivePath('/search') ? 'text-[#ba9eff] scale-110' : 'text-zinc-400 hover:text-white active:opacity-90'
+            }`}
           href="/search"
         >
-          <span 
+          <span
             className="material-symbols-outlined text-2xl"
             style={isActivePath('/search') ? { fontVariationSettings: "'FILL' 1" } : {}}
           >
@@ -213,15 +206,14 @@ export function BottomNavBar() {
           </span>
           <span>Search</span>
         </Link>
-        
+
         {isAuthenticated ? (
-          <Link 
-            className={`flex flex-col items-center gap-1 transition-all ${
-              isActivePath('/dashboard/tickets') ? 'text-[#ba9eff] scale-110' : 'text-zinc-400 hover:text-white active:opacity-90'
-            }`} 
+          <Link
+            className={`flex flex-col items-center gap-1 transition-all ${isActivePath('/dashboard/tickets') ? 'text-[#ba9eff] scale-110' : 'text-zinc-400 hover:text-white active:opacity-90'
+              }`}
             href="/dashboard/tickets"
           >
-            <span 
+            <span
               className="material-symbols-outlined text-2xl"
               style={isActivePath('/dashboard/tickets') ? { fontVariationSettings: "'FILL' 1" } : {}}
             >
@@ -230,8 +222,8 @@ export function BottomNavBar() {
             <span>Tickets</span>
           </Link>
         ) : (
-          <Link 
-            className="flex flex-col items-center gap-1 text-zinc-400 hover:text-white transition-all active:opacity-90" 
+          <Link
+            className="flex flex-col items-center gap-1 text-zinc-400 hover:text-white transition-all active:opacity-90"
             href="/login"
           >
             <span className="material-symbols-outlined text-2xl">person</span>

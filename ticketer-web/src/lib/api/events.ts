@@ -20,6 +20,7 @@ export interface Event {
   currency: string;
   metadata: any;
   published_at: string | null;
+  max_tickets_per_user: number;
   created_at: string;
   updated_at: string;
 }
@@ -102,9 +103,13 @@ export const cancelEvent = async (id: string): Promise<Event> => {
   return response.data;
 };
 
-// Add pricing tier (requires HOST capability)
-export const addTier = async (eventId: string, tierData: Partial<TicketTier>): Promise<TicketTier> => {
-  const response = await api.post(`/events/${eventId}/tiers`, tierData);
+// Add one or more pricing tiers (requires HOST capability)
+export const addTier = async (
+  eventId: string,
+  tierData: Partial<TicketTier> | Partial<TicketTier>[],
+): Promise<TicketTier[]> => {
+  const tiers = Array.isArray(tierData) ? tierData : [tierData];
+  const response = await api.post(`/events/${eventId}/tiers`, { tiers });
   return response.data;
 };
 
@@ -135,5 +140,11 @@ export const getPayouts = async (eventId: string): Promise<any> => {
 // Request partial payout (requires HOST capability)
 export const requestPartialPayout = async (eventId: string, amount: number): Promise<any> => {
   const response = await api.post(`/events/${eventId}/payouts/request-partial`, { amount });
+  return response.data;
+};
+
+// Get events hosted by the current user (requires HOST capability)
+export const getMyHostEvents = async (): Promise<Event[]> => {
+  const response = await api.get('/events/host/me');
   return response.data;
 };

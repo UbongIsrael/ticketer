@@ -39,12 +39,13 @@ export interface TicketWithDetails extends Ticket {
 }
 
 export interface ReserveTicketRequest {
+  event_id: string;
   tier_id: string;
-  quantity?: number;
+  quantity: number;
 }
 
 export interface ReserveTicketResponse {
-  ticket: Ticket;
+  tickets: Ticket[];
   reservation_expires_at: string;
 }
 
@@ -61,12 +62,12 @@ export const cancelReservation = async (ticketId: string): Promise<void> => {
 
 // List my tickets
 export const getMyTickets = async (): Promise<TicketWithDetails[]> => {
-  const response = await api.get('/me/tickets');
+  const response = await api.get('/tickets/me');
   return response.data;
 };
 
 // Get single ticket detail + QR
 export const getTicketById = async (ticketId: string): Promise<TicketWithDetails> => {
-  const response = await api.get(`/me/tickets/${ticketId}`);
+  const response = await api.get(`/tickets/me/${ticketId}`);
   return response.data;
 };

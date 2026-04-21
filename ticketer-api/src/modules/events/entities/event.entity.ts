@@ -62,6 +62,9 @@ export class Event {
   @Column('tsvector', { select: false, nullable: true })
   search_vector: any;
 
+  @Column('int', { default: 3 })
+  max_tickets_per_user: number;
+
   @Column('timestamptz', { nullable: true })
   published_at: Date;
 

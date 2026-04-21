@@ -128,9 +128,22 @@ export default function EventDetail() {
                   <span>{event.venue_name}, {event.city}</span>
                 </div>
                 {weather && (
-                  <div className="flex items-center gap-2 bg-[#1f1f22]/80 backdrop-blur border border-white/10 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-lg">
-                    <span className="material-symbols-outlined text-amber-400 text-sm">light_mode</span>
-                    <span>{weather.temperature}°C • {weather.description}</span>
+                  <div className="flex items-center gap-2.5 bg-[#1f1f22]/90 backdrop-blur-lg border border-white/10 px-4 py-2 rounded-2xl text-xs text-white shadow-xl">
+                    <span className="material-symbols-outlined text-amber-400 text-base">partly_cloudy_day</span>
+                    <div>
+                      <p className="font-black text-base leading-none">{weather.temperature}°C</p>
+                      <p className="text-zinc-400 capitalize text-[10px] leading-none mt-0.5">{weather.description}</p>
+                    </div>
+                    <div className="border-l border-white/10 pl-2.5 flex flex-col gap-1">
+                      <span className="flex items-center gap-1 text-[10px] text-zinc-400">
+                        <span className="material-symbols-outlined text-[12px] text-sky-400">water_drop</span>
+                        {weather.humidity}%
+                      </span>
+                      <span className="flex items-center gap-1 text-[10px] text-zinc-400">
+                        <span className="material-symbols-outlined text-[12px] text-sky-300">air</span>
+                        {weather.wind_speed} km/h
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
